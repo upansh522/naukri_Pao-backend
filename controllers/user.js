@@ -1,16 +1,17 @@
 const bcrypt = require('bcrypt');
 const { Client } = require('pg');
 const dotenv = require('dotenv');
-dotenv.config();
-const jwt=require('jsonwebtoken');
+const jwt = require('jsonwebtoken');
 const { createToken } = require('../services/user');
+
+dotenv.config();
 
 const db = new Client({
   host: 'localhost',
   port: process.env.DB_CONNECTION_PORT,
-  user: 'postgres', 
-  password: process.env.DB_CONNECTION_PASSWORD, 
-  database: 'Naukri_Pao'
+  user: 'postgres',
+  password: process.env.DB_CONNECTION_PASSWORD,
+  database: 'Naukri_Pao',
 });
 
 db.connect((err) => {
@@ -22,38 +23,42 @@ db.connect((err) => {
 });
 
 async function handleSignup(req, res) {
-  const { firstName, lastName, emailAddress, dateOfBirth, mobileno, fullAddress, postalCode, state, country, organization, sex, role, password, projects, currentStudies, highestDegree, resumeFilePath, experience, skills, project, lookingFor } = req.body;
+  const { firstName, lastName, emailAddress, dateOfBirth, mobileno, fullAddress, postalCode, state, country, organization, sex, role, password, projects, currentStudies, highestDegree, experience, skills, project, lookingFor } = req.body;
+  const resumeFilePath = req.file ? req.file.path : null;
+
+  console.log(req.body);  // Check other form fields
+  console.log(req.file);
+
 
   try {
-      const salt = await bcrypt.genSalt(10);
-      const hashedPassword = await bcrypt.hash(password, salt);
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
 
-      const query = `INSERT INTO user_info (firstName, lastName, emailAddress, dateOfbirth, mobileno, fullAddress, postalCode, state, country, organization, sex, role, password, salt) 
-                     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING id`;
-                     
-      const values = [firstName, lastName, emailAddress, dateOfBirth, mobileno, fullAddress, postalCode, state, country, organization, sex, role, hashedPassword, salt];
-      const result = await db.query(query, values);
+    const query = `INSERT INTO user_info (firstName, lastName, emailAddress, dateOfbirth, mobileno, fullAddress, postalCode, state, country, organization, sex, role, password, salt) 
+                   VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING id`;
 
-      const user = result.rows[0];
-      const userId = user.id;
+    const values = [firstName, lastName, emailAddress, dateOfBirth, mobileno, fullAddress, postalCode, state, country, organization, sex, role, hashedPassword, salt];
+    const result = await db.query(query, values);
 
-      await Promise.all([
-          handleProjectsAdd({ body: { projects, userId } }, res),
-          handleProfessionalInfo({ body: { userId, currentStudies, highestDegree, resumeFilePath, experience, skills, project, lookingFor } }, res)
-      ]);
+    const user = result.rows[0];
+    const userId = user.id;
 
-      const token = createToken(user);
-      res.cookie("User_token", token, { httpOnly: true });
+    await Promise.all([
+      handleProjectsAdd({ body: { projects, userId } }, res),
+      handleProfessionalInfo({ body: { userId, currentStudies, highestDegree, resumeFilePath, experience, skills, project, lookingFor } }, res)
+    ]);
 
-      // Only send this response if no errors have occurred and no other response has been sent
-      if (!res.headersSent) {
-          return res.status(201).send('Registration successful');
-      }
+    const token = createToken(user);
+    res.cookie("User_token", token, { httpOnly: true });
+
+    if (!res.headersSent) {
+      return res.status(201).send('Registration successful');
+    }
   } catch (err) {
-      console.error('Error inserting user into database:', err);
-      if (!res.headersSent) {
-          res.status(500).send('Error registering user');
-      }
+    console.error('Error inserting user into database:', err);
+    if (!res.headersSent) {
+      res.status(500).send('Error registering user');
+    }
   }
 }
 
@@ -86,6 +91,7 @@ async function handleProjectsAdd(req, res) {
     }
   }
 }
+
 async function handleProfessionalInfo(req, res) {
   const { userId, currentStudies, highestDegree, resumeFilePath, experience, skills, project, lookingFor } = req.body;
 
@@ -104,6 +110,7 @@ async function handleProfessionalInfo(req, res) {
     }
   }
 }
+
 async function handleLogin(req, res) {
   const { emailAddress, password } = req.body;
 
@@ -120,14 +127,12 @@ async function handleLogin(req, res) {
 
     const user = result.rows[0];
 
-    // Compare the provided password with the hashed password in the database
     const match = await bcrypt.compare(password, user.password);
 
     if (match) {
       const token = createToken(user);
-      res.cookie('User_token',token,{ httpOnly: true });
+      res.cookie('User_token', token, { httpOnly: true });
       res.status(200).send('Login successful');
-      // Proceed with session creation or token generation
     } else {
       console.log('Incorrect password');
       res.status(401).send('Incorrect password');
@@ -138,4 +143,5 @@ async function handleLogin(req, res) {
   }
 }
 
-module.exports = { handleSignup, handleLogin };
+// Export routes
+module.exports = { handleSignup, handleLogin,};

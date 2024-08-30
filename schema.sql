@@ -46,3 +46,26 @@ CREATE TABLE IF NOT EXISTS projects (
     projectName VARCHAR(255) NOT NULL,
     projectDescription TEXT
 );
+
+CREATE TABLE job_posts (
+    id SERIAL PRIMARY KEY,
+    job_id INTEGER UNIQUE,
+    recruiter_email VARCHAR(255) NOT NULL,
+    job_title VARCHAR(255) NOT NULL,
+    company VARCHAR(255) NOT NULL,
+    location VARCHAR(255) NOT NULL,
+    description TEXT NOT NULL,
+    salary VARCHAR(100) NOT NULL,
+    job_type VARCHAR(50) NOT NULL,
+    min_qualification VARCHAR(50) NOT NULL,
+    min_experience VARCHAR(50) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE job_skills (
+    id SERIAL PRIMARY KEY,
+    job_post_id INT NOT NULL,
+    skill VARCHAR(100) NOT NULL,
+    FOREIGN KEY (job_post_id) REFERENCES job_posts(id) ON DELETE CASCADE
+);
+
