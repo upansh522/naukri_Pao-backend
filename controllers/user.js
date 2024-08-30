@@ -2,6 +2,8 @@ const bcrypt = require('bcrypt');
 const { Client } = require('pg');
 const dotenv = require('dotenv');
 dotenv.config();
+const jwt=require('jsonwebtoken');
+const { createToken } = require('../services/user');
 
 const db = new Client({
   host: 'localhost',
@@ -20,35 +22,38 @@ db.connect((err) => {
 });
 
 async function handleSignup(req, res) {
-  const { firstName, lastName, emailAddress, dateOfBirth, mobileNo, fullAddress, postalCode, state, country, organization, sex, role, password, projects, currentStudies, highestDegree, resumeFilePath, experience, skills, project, lookingFor } = req.body;
+  const { firstName, lastName, emailAddress, dateOfBirth, mobileno, fullAddress, postalCode, state, country, organization, sex, role, password, projects, currentStudies, highestDegree, resumeFilePath, experience, skills, project, lookingFor } = req.body;
 
   try {
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash(password, salt);
 
-    const query = `INSERT INTO user_info (firstName, lastName, emailAddress, dateOfBirth, mobileNo, fullAddress, postalCode, state, country, organization, sex, role, password, salt) 
-                   VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING id`;
-                   
-    const values = [firstName, lastName, emailAddress, dateOfBirth, mobileNo, fullAddress, postalCode, state, country, organization, sex, role, hashedPassword, salt];
-    const result = await db.query(query, values);
+      const query = `INSERT INTO user_info (firstName, lastName, emailAddress, dateOfbirth, mobileno, fullAddress, postalCode, state, country, organization, sex, role, password, salt) 
+                     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING id`;
+                     
+      const values = [firstName, lastName, emailAddress, dateOfBirth, mobileno, fullAddress, postalCode, state, country, organization, sex, role, hashedPassword, salt];
+      const result = await db.query(query, values);
 
-    const userId = result.rows[0].id; // Get user ID
+      const user = result.rows[0];
+      const userId = user.id;
 
-    // Handle Projects and Professional Info in parallel
-    await Promise.all([
-      handleProjectsAdd({ body: { projects, userId } }, res), // Pass userId to handleProjectsAdd
-      handleProfessionalInfo({ body: { currentStudies, highestDegree, resumeFilePath, experience, skills, project, lookingFor } }, res)
-    ]);
+      await Promise.all([
+          handleProjectsAdd({ body: { projects, userId } }, res),
+          handleProfessionalInfo({ body: { userId, currentStudies, highestDegree, resumeFilePath, experience, skills, project, lookingFor } }, res)
+      ]);
 
-    // Ensure the response is only sent once
-    if (!res.headersSent) {
-      res.status(201).send('User registered successfully');
-    }
+      const token = createToken(user);
+      res.cookie("User_token", token, { httpOnly: true });
+
+      // Only send this response if no errors have occurred and no other response has been sent
+      if (!res.headersSent) {
+          return res.status(201).send('Registration successful');
+      }
   } catch (err) {
-    console.error('Error inserting user into database:', err);
-    if (!res.headersSent) {
-      res.status(500).send('Error registering user');
-    }
+      console.error('Error inserting user into database:', err);
+      if (!res.headersSent) {
+          res.status(500).send('Error registering user');
+      }
   }
 }
 
@@ -73,9 +78,6 @@ async function handleProjectsAdd(req, res) {
     }
 
     await db.query('COMMIT');
-    if (!res.headersSent) {
-      res.status(200).send('Projects inserted successfully');
-    }
   } catch (error) {
     console.error('Error inserting projects into database:', error);
     await db.query('ROLLBACK');
@@ -85,20 +87,16 @@ async function handleProjectsAdd(req, res) {
   }
 }
 async function handleProfessionalInfo(req, res) {
-  const { currentStudies, highestDegree, resumeFilePath, experience, skills, project, lookingFor } = req.body;
+  const { userId, currentStudies, highestDegree, resumeFilePath, experience, skills, project, lookingFor } = req.body;
 
   try {
-    const query = `INSERT INTO user_professional_info (currentStudies, highestDegree, resumeFilePath, experience, skills, project, lookingFor) 
-                   VALUES ($1, $2, $3, $4, $5, $6, $7)`;
+    const query = `INSERT INTO user_professional_info (userid, currentStudies, highestDegree, resumeFilePath, experience, skills, project, lookingFor) 
+                   VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`;
 
-    const values = [currentStudies, highestDegree, resumeFilePath, experience, skills, project, lookingFor];
+    const values = [userId, currentStudies, highestDegree, resumeFilePath, experience, skills, project, lookingFor];
 
     const result = await db.query(query, values);
     console.log('Professional info added successfully:', result);
-    // Ensure response only if handled separately
-    if (!res.headersSent) {
-      res.status(201).send('Professional info added successfully');
-    }
   } catch (err) {
     console.error('Error inserting professional info into database:', err);
     if (!res.headersSent) {
@@ -106,14 +104,12 @@ async function handleProfessionalInfo(req, res) {
     }
   }
 }
-
-// Handle user login
 async function handleLogin(req, res) {
-  const { email, password } = req.body;
+  const { emailAddress, password } = req.body;
 
   try {
     const query = `SELECT * FROM user_info WHERE emailAddress = $1`;
-    const values = [email];
+    const values = [emailAddress];
 
     const result = await db.query(query, values);
 
@@ -128,7 +124,8 @@ async function handleLogin(req, res) {
     const match = await bcrypt.compare(password, user.password);
 
     if (match) {
-      console.log('Login successful');
+      const token = createToken(user);
+      res.cookie('User_token',token,{ httpOnly: true });
       res.status(200).send('Login successful');
       // Proceed with session creation or token generation
     } else {
