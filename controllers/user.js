@@ -45,7 +45,7 @@ async function handleSignup(req, res) {
     ]);
 
     const token = createToken(user);
-    res.cookie("User_token", token, { httpOnly: true });
+    res.cookie("User_token", token, { httpOnly: true, sameSite: 'none', secure: true });
 
     if (!res.headersSent) {
       return res.status(201).send('Registration successful');
@@ -128,7 +128,7 @@ async function handleLogin(req, res) {
     if (match) {
       const token = createToken(user);
       console.log(token);
-      res.cookie('User_token', token,{ httpOnly: true }).send('cookie set');
+      res.cookie('User_token', token,{ httpOnly: true, sameSite: 'none', secure: true}).send('cookie set');
       
     } else {
       console.log('Incorrect password');
@@ -142,12 +142,12 @@ async function handleLogin(req, res) {
 
 async function handleSignout(req,res){
   res.clearCookie('User_token', {
-    path: '/',          // Set to the root path or the path where cookie was set
-    // domain: 'localhost', // Use if necessary; omit for localhost
-    // secure: false,   // Use if served over HTTPS
-    httpOnly: true,    // Use if the cookie was HttpOnly
-    sameSite: 'Lax'    // Match the SameSite attribute if set
-});
+    path: '/',
+    domain: 'https://naukri-pao-frontend-4hwh.vercel.app/, // Replace with your domain if applicable',
+    secure: true,
+    httpOnly: true,
+    sameSite: 'None'  // Use 'None' for cross-site cookies with Secure
+  });
 res.status(200).send('Logged out');
 }
 // Export routes
