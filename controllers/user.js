@@ -7,11 +7,7 @@ const { createToken } = require('../services/user');
 dotenv.config();
 
 const db = new Client({
-  host: process.env.DB_CONNECTION_HOST,
-  port: process.env.DB_CONNECTION_PORT,
-  user: process.env.DB_USERNAME,
-  password: process.env.DB_CONNECTION_PASSWORD,
-  database: process.env.DB_NAME,
+  connectionString: `postgres://${process.env.DB_USERNAME}:${process.env.DB_CONNECTION_PASSWORD}@${process.env.DB_CONNECTION_HOSTNAME}:${process.env.DB_CONNECTION_PORT}/${process.env.DB_NAME}`
 });
 
 db.connect((err) => {
