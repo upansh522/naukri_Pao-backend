@@ -2,7 +2,7 @@ const { Client } = require('pg');
 const { validateToken } = require('../services/user');
 
 const db = new Client({
-  host: 'localhost',
+  host: process.env.DB_CONNECTION_HOST,
   port: process.env.DB_CONNECTION_PORT,
   user: 'postgres',
   password: process.env.DB_CONNECTION_PASSWORD,
