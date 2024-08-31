@@ -4,9 +4,9 @@ const { validateToken } = require('../services/user');
 const db = new Client({
   host: process.env.DB_CONNECTION_HOST,
   port: process.env.DB_CONNECTION_PORT,
-  user: 'postgres',
+  user: process.env.DB_USERNAME,
   password: process.env.DB_CONNECTION_PASSWORD,
-  database: 'Naukri_Pao',
+  database: process.env.DB_NAME,
 });
 
 db.connect((err) => {

@@ -2,7 +2,7 @@
 CREATE DATABASE IF NOT EXISTS Nauri_Pao;
 
 -- Use the Nauri_Pao database
-USE Nauri_Pao;
+USE naukri_pao_datbase;
 
 -- Create the user_info table
 CREATE TABLE IF NOT EXISTS user_info (
