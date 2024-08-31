@@ -131,8 +131,9 @@ async function handleLogin(req, res) {
 
     if (match) {
       const token = createToken(user);
-      res.cookie('User_token', token, { httpOnly: true });
-      res.status(200).send('Login successful');
+      console.log(token);
+      res.cookie('User_token', token,{ httpOnly: true }).send('cookie set');
+      
     } else {
       console.log('Incorrect password');
       res.status(401).send('Incorrect password');
@@ -143,5 +144,15 @@ async function handleLogin(req, res) {
   }
 }
 
+async function handleSignout(req,res){
+  res.clearCookie('User_token', {
+    path: '/',          // Set to the root path or the path where cookie was set
+    // domain: 'localhost', // Use if necessary; omit for localhost
+    // secure: false,   // Use if served over HTTPS
+    httpOnly: true,    // Use if the cookie was HttpOnly
+    sameSite: 'Lax'    // Match the SameSite attribute if set
+});
+res.status(200).send('Logged out');
+}
 // Export routes
-module.exports = { handleSignup, handleLogin,};
+module.exports = { handleSignup, handleLogin,handleSignout};

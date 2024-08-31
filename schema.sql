@@ -69,3 +69,11 @@ CREATE TABLE job_skills (
     FOREIGN KEY (job_post_id) REFERENCES job_posts(id) ON DELETE CASCADE
 );
 
+CREATE TABLE user_job_recommendations (
+    id SERIAL PRIMARY KEY,         -- A unique identifier for each recommendation (optional)
+    user_id INTEGER NOT NULL,      -- Foreign key reference to the users table
+    job_id INTEGER NOT NULL,       -- Foreign key reference to the job_posts table
+    recommended_at TIMESTAMP DEFAULT NOW(),  -- Timestamp to track when the recommendation was made
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    FOREIGN KEY (job_id) REFERENCES job_posts(job_id) ON DELETE CASCADE
+);
