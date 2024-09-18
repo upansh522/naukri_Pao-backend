@@ -1,8 +1,10 @@
 const { Client } = require('pg');
 const { validateToken } = require('../services/user');
+const dotenv = require('dotenv');
+dotenv.config();
 
 const db = new Client({
-  connectionString: `postgres://${process.env.DB_USERNAME}:${process.env.DB_CONNECTION_PASSWORD}@${process.env.DB_CONNECTION_HOSTNAME}:${process.env.DB_CONNECTION_PORT}/${process.env.DB_NAME}?ssl=true`
+  connectionString: process.env.DB_URL
 });
 
 db.connect((err) => {

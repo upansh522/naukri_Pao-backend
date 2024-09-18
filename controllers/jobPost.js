@@ -1,7 +1,9 @@
 const { Client } = require('pg');
+const dotenv = require('dotenv');
+dotenv.config();
 
 const db = new Client({
-  connectionString: `postgres://${process.env.DB_USERNAME}:${process.env.DB_CONNECTION_PASSWORD}@${process.env.DB_CONNECTION_HOSTNAME}:${process.env.DB_CONNECTION_PORT}/${process.env.DB_NAME}?ssl=true`
+  connectionString: process.env.DB_URL
 });
 
 db.connect((err) => {
@@ -21,7 +23,7 @@ async function handleJobPost(req, res) {
     location,
     description,
     salary,
-    skills,  // Changed from 'skill' to 'skills'
+    skills,  
     job_type,
     min_qualification,
     min_experience
@@ -30,7 +32,6 @@ async function handleJobPost(req, res) {
   console.log(req.body);
 
   try {
-    // Insert job post into job_posts table
     const query = `
       INSERT INTO job_posts (
         job_id, recruiter_email, job_title, company, location, description, salary, job_type, min_qualification, min_experience
