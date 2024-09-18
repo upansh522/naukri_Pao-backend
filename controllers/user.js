@@ -143,7 +143,7 @@ async function handleLogin(req, res) {
 async function handleSignout(req,res){
   res.clearCookie('User_token', {
     path: '/',
-    domain: 'https://naukri-pao-frontend-4hwh.vercel.app',
+    domain: 'https://naukri-pao-frontend.vercel.app',
     secure: true,
     httpOnly: true,
     sameSite: 'None'  // Use 'None' for cross-site cookies with Secure
